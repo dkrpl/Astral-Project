@@ -1,0 +1,20 @@
+# Environment files (JANGAN PERNAH MASUK GIT)
+.env
+.env.*
+!.env.example
+
+# Python virtual env
+venv/
+env/
+ENV/
+
+# Node environment files
+node_modules/
+
+# Laravel environment
+/vendor
+
+# Cache & system
+__pycache__/
+*.pyc
+.DS_Store
