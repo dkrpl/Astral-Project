@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List, Any, Dict
 from datetime import datetime
 
@@ -58,7 +58,7 @@ class TokenDataSchema(BaseModel):
 
 
 # ===============================
-# SYSTEM SCHEMAS
+# SYSTEM SCHEMAS - BRIDGE REQUIRED
 # ===============================
 class SystemBaseSchema(BaseModel):
     system_name: str
@@ -67,10 +67,16 @@ class SystemBaseSchema(BaseModel):
     db_port: int
     db_name: str
     db_username: str
-    connection_params: Optional[Dict] = None
-    table_mappings: Optional[Dict] = None
-    field_aliases: Optional[Dict] = None
-    business_rules: Optional[Dict] = None
+    connection_params: Dict
+
+    @field_validator('connection_params')
+    @classmethod
+    def validate_bridge_config(cls, v):
+        if not v.get('bridge_url'):
+            raise ValueError('bridge_url is required in connection_params')
+        if not v.get('bridge_api_key'):
+            raise ValueError('bridge_api_key is required in connection_params')
+        return v
 
 class SystemCreateSchema(SystemBaseSchema):
     db_password: str
@@ -78,25 +84,18 @@ class SystemCreateSchema(SystemBaseSchema):
     class Config:
         json_schema_extra = {
             "example": {
-                "system_name": "Sales DB",
+                "system_name": "Sales Database",
                 "system_type": "mysql",
-                "db_host": "127.0.0.1",
+                "db_host": "localhost",
                 "db_port": 3306,
-                "db_name": "salesdb",
-                "db_username": "root",
-                "db_password": "secret123",
+                "db_name": "sales_db",
+                "db_username": "db_user",
+                "db_password": "db_password_123",
                 "connection_params": {
-                    "bridge_url": "https://astral.ai/bridge.php",
-                    "bridge_api_key": "astral-secret-key"
-                },
-                "table_mappings": {
-                    "products": "tbl_products"
-                },
-                "field_aliases": {
-                    "product_name": "name"
-                },
-                "business_rules": {
-                    "limit": "100"
+                    "bridge_url": "https://astral-bridge.com/bridge.php",
+                    "bridge_api_key": "astral-secret-key-123",
+                    "timeout": 30,
+                    "max_retries": 3
                 }
             }
         }
@@ -111,7 +110,6 @@ class SystemResponseSchema(SystemBaseSchema):
     class Config:
         from_attributes = True
 
-
 class SystemTestSchema(BaseModel):
     system_type: str
     db_host: str
@@ -119,20 +117,20 @@ class SystemTestSchema(BaseModel):
     db_name: str
     db_username: str
     db_password: str
-    connection_params: Optional[Dict] = None
+    connection_params: Dict
 
     class Config:
         json_schema_extra = {
             "example": {
                 "system_type": "mysql",
-                "db_host": "127.0.0.1",
+                "db_host": "localhost",
                 "db_port": 3306,
                 "db_name": "test_db",
-                "db_username": "root",
-                "db_password": "password123",
+                "db_username": "test_user",
+                "db_password": "test_password",
                 "connection_params": {
-                    "bridge_url": "https://example.com/bridge",
-                    "bridge_api_key": "bridge-secret"
+                    "bridge_url": "https://astral-bridge.com/bridge.php",
+                    "bridge_api_key": "astral-secret-key-123"
                 }
             }
         }
